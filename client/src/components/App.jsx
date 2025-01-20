@@ -1,5 +1,6 @@
+// App.jsx
 import React, { useState, useEffect, createContext } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 
 import jwt_decode from "jwt-decode";
 
@@ -20,7 +21,7 @@ const App = () => {
   useEffect(() => {
     get("/api/whoami").then((user) => {
       if (user._id) {
-        // they are registed in the database, and currently logged in.
+        // they are registered in the database, and currently logged in.
         setUserId(user._id);
       }
     });
