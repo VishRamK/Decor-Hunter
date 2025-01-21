@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import "./Generate.css";
 
 const Generate = () => {
   const [textInput, setTextInput] = useState("");
@@ -58,30 +59,56 @@ const Generate = () => {
   };
 
   return (
-    <div className="generate-component">
+    <div className="generate-container">
       <Link to={"/"}>Home</Link>
       <h2>Generate</h2>
-      <form onSubmit={handleSubmit}>
+      <form className="generate-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="textInput">Text Input:</label>
-          <input type="text" id="textInput" value={textInput} onChange={handleTextChange} />
+          <input
+            type="text"
+            id="textInput"
+            value={textInput}
+            onChange={handleTextChange}
+            className="generate-input"
+          />
         </div>
         <div className="form-group">
           <label htmlFor="imageInput">Image Input:</label>
-          <input type="file" id="imageInput" accept="image/*" onChange={handleImageChange} />
+          <input
+            type="file"
+            id="imageInput"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="generate-input"
+          />
         </div>
-        <button type="submit">Submit</button>
+        <button type="submit" className="generate-button">
+          Submit
+        </button>
       </form>
 
       {imagePreview && (
         <div className="image-preview">
-          <h3>Generated Image:</h3>
-          <img
-            src={imagePreview}
-            alt="Generated preview"
-            style={{ maxWidth: "100%", marginTop: "20px" }}
-          />
-          <button onClick={handleDownload} style={{ marginTop: "10px" }}>
+          <h3>Generated Images:</h3>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "20px",
+              padding: "0 20px",
+            }}
+          >
+            {[...Array(5)].map((_, index) => (
+              <img
+                key={index}
+                src={imagePreview}
+                alt={`Generated preview ${index + 1}`}
+                className="generated-image"
+              />
+            ))}
+          </div>
+          <button onClick={handleDownload} className="generate-button">
             Download Image
           </button>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import "./Settings.css";
 
 const Settings = () => {
   const [membershipInfo, setMembershipInfo] = useState({});
@@ -30,14 +31,16 @@ const Settings = () => {
   }, []);
 
   return (
-    <div className="settings-page">
-      <Link to={"/"}>Home</Link>
+    <div className="settings-container">
+      <div style={{ textAlign: "center", width: "100%" }}>
+        <Link to={"/"}>Home</Link>
+      </div>
       <h1>Settings</h1>
       {isLoading ? (
         <p>Loading your settings...</p>
       ) : (
         <div>
-          <section className="membership-section">
+          <section className="settings-section">
             <h2>Membership Information</h2>
             <p>
               <strong>Membership Level:</strong> {membershipInfo.level || "Free"}
@@ -50,7 +53,7 @@ const Settings = () => {
             </p>
           </section>
 
-          <section className="user-details-section">
+          <section className="settings-section">
             <h2>User Details</h2>
             <p>
               <strong>Name:</strong> {userDetails.name || "N/A"}
@@ -63,11 +66,21 @@ const Settings = () => {
             </p>
           </section>
 
-          <section className="actions-section">
+          <section className="settings-section">
             <h2>Actions</h2>
-            <button onClick={() => console.log("Edit Profile clicked")}>Edit Profile</button>
-            <button onClick={() => console.log("Change Password clicked")}>Change Password</button>
-            <button onClick={() => console.log("Upgrade Membership clicked")}>
+            <button className="settings-button" onClick={() => console.log("Edit Profile clicked")}>
+              Edit Profile
+            </button>
+            <button
+              className="settings-button"
+              onClick={() => console.log("Change Password clicked")}
+            >
+              Change Password
+            </button>
+            <button
+              className="settings-button"
+              onClick={() => console.log("Upgrade Membership clicked")}
+            >
               Upgrade Membership
             </button>
           </section>
