@@ -33,7 +33,6 @@ const Settings = () => {
     <div className="settings-page">
       <Link to={"/"}>Home</Link>
       <h1>Settings</h1>
-
       {isLoading ? (
         <p>Loading your settings...</p>
       ) : (

@@ -16,13 +16,18 @@ export const UserContext = createContext(null);
  * Define the "App" component
  */
 const App = () => {
-  const [userId, setUserId] = useState(undefined);
+  const [userId, setUserId] = useState(() => {
+    // Check localStorage for saved userId on initial load
+    const savedUserId = localStorage.getItem("userId");
+    return savedUserId || undefined;
+  });
 
   useEffect(() => {
     get("/api/whoami").then((user) => {
       if (user._id) {
         // they are registered in the database, and currently logged in.
         setUserId(user._id);
+        localStorage.setItem("userId", user._id);
       }
     });
   }, []);
@@ -33,12 +38,14 @@ const App = () => {
     console.log(`Logged in as ${decodedCredential.name}`);
     post("/api/login", { token: userToken }).then((user) => {
       setUserId(user._id);
+      localStorage.setItem("userId", user._id);
       post("/api/initsocket", { socketid: socket.id });
     });
   };
 
   const handleLogout = () => {
     setUserId(undefined);
+    localStorage.removeItem("userId");
     post("/api/logout");
   };
 
