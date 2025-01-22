@@ -15,10 +15,13 @@ const Home = () => {
       {userId ? (
         <div className="home-logged-in">
           <div className="nav-links">
+            <Link to="/feed" className="nav-link">
+              Feed
+            </Link>
             <Link to="/generate" className="nav-link">
               Generate
             </Link>
-            <Link to="/profile" className="nav-link">
+            <Link to={`/profile/${userId}`} className="nav-link">
               Profile
             </Link>
           </div>

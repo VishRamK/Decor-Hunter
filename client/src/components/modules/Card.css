@@ -1,0 +1,80 @@
+.Card-container {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.Card-story {
+  padding: 1.5rem;
+}
+
+.u-link {
+  color: #2c3e50;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.u-link:hover {
+  color: #3498db;
+}
+
+.Card-storyContent {
+  margin: 1rem 0;
+  color: #34495e;
+  line-height: 1.6;
+}
+
+.Card-storyImage {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.Card-saveButton {
+  padding: 0.6rem 1.2rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+}
+
+.Card-saveButton:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.u-bold {
+  font-weight: 600;
+}
+
+/* Comments section styling */
+.Card-commentSection {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .Card-container {
+    border-radius: 8px;
+  }
+
+  .Card-story {
+    padding: 1rem;
+  }
+
+  .Card-storyImage {
+    max-height: 300px;
+  }
+}

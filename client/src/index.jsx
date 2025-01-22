@@ -5,6 +5,7 @@ import Home from "./components/pages/Home";
 import NotFound from "./components/pages/NotFound";
 import Generate from "./components/pages/Generate";
 import Profile from "./components/pages/Profile";
+import Feed from "./components/pages/Feed";
 import Settings from "./components/pages/Settings";
 
 import {
@@ -23,7 +24,8 @@ const router = createBrowserRouter(
     <Route errorElement={<NotFound />} element={<App />}>
       <Route path="/" element={<Home />} />
       <Route path="/generate" element={<Generate />} />
-      <Route path="/profile" element={<Profile />} />
+      <Route path="/profile/:userId" element={<Profile />} />
+      <Route path="/feed" element={<Feed />} />
       <Route path="/settings" element={<Settings />} />
     </Route>
   )

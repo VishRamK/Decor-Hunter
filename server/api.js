@@ -34,6 +34,8 @@ const upload = multer({
 
 // import models so we can interact with the database
 const User = require("./models/user");
+const Story = require("./models/story");
+const Comment = require("./models/comment");
 
 // import authentication library
 const auth = require("./auth");
@@ -75,13 +77,99 @@ router.post("/initsocket", (req, res) => {
 // | write your API methods below!|
 // |------------------------------|
 
+// Get all stories
+router.get("/stories", (req, res) => {
+  Story.find({}).then((stories) => {
+    res.send(stories);
+  });
+});
+
+// Create a new story
+router.post("/story", (req, res) => {
+  const newStory = new Story({
+    creator_id: req.user._id,
+    creator_name: req.user.name,
+    content: req.body.content,
+    img_url: req.body.img_url, // This will be populated after image upload
+  });
+
+  newStory.save().then((story) => res.send(story));
+});
+
+// Get comments for a story
+router.get("/comment", (req, res) => {
+  Comment.find({ parent: req.query.parent }).then((comments) => {
+    res.send(comments);
+  });
+});
+
+// Create a new comment
+router.post("/comment", (req, res) => {
+  const newComment = new Comment({
+    creator_id: req.user._id,
+    creator_name: req.user.name,
+    parent: req.body.parent,
+    content: req.body.content,
+  });
+
+  newComment.save().then((comment) => res.send(comment));
+});
+
+// Save a story
+router.post("/save-story", auth.ensureLoggedIn, (req, res) => {
+  User.findById(req.user._id).then((user) => {
+    if (!user.savedStories) {
+      user.savedStories = [];
+    }
+    if (!user.savedStories.includes(req.body.storyId)) {
+      user.savedStories.push(req.body.storyId);
+      user.save().then(() => res.send({}));
+    } else {
+      res.send({});
+    }
+  });
+});
+
+// Unsave a story
+router.post("/unsave-story", auth.ensureLoggedIn, (req, res) => {
+  User.findById(req.user._id).then((user) => {
+    if (user.savedStories) {
+      user.savedStories = user.savedStories.filter((id) => id !== req.body.storyId);
+      user.save().then(() => res.send({}));
+    } else {
+      res.send({});
+    }
+  });
+});
+
+// Check if a story is saved
+router.get("/saved-story", auth.ensureLoggedIn, (req, res) => {
+  User.findById(req.user._id).then((user) => {
+    const isSaved = user.savedStories && user.savedStories.includes(req.query.storyId);
+    res.send({ isSaved });
+  });
+});
+
+// Get all saved stories
+router.get("/saved-stories", auth.ensureLoggedIn, (req, res) => {
+  User.findById(req.user._id).then((user) => {
+    if (!user.savedStories || user.savedStories.length === 0) {
+      res.send([]);
+      return;
+    }
+    Story.find({ _id: { $in: user.savedStories } }).then((stories) => {
+      res.send(stories);
+    });
+  });
+});
+
 // anything else falls to this "not found" case
 
 router.get("/user", (req, res) => {
   User.findById(req.query.userid)
     .then((user) => {
       if (user) {
-        res.send({ name: user.name }); // Ensure name is part of the response
+        res.send(user);
       } else {
         res.status(404).send({ error: "User not found" });
       }

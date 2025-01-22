@@ -2,30 +2,35 @@ import React, { useState, useEffect, useContext } from "react";
 import { Link, useParams } from "react-router-dom";
 import "./Profile.css";
 import { UserContext } from "../App";
-import { get, post } from "../../utilities";
+import { get } from "../../utilities";
+import SingleStory from "../modules/SingleStory";
 
 const Profile = () => {
-  const { userId } = useContext(UserContext);
+  const { userId: loggedInUserId } = useContext(UserContext); // Current logged-in user
+  const { userId: profileUserId } = useParams(); // Extract userId from the URL
   const [posts, setPosts] = useState([]);
-  const [archivedImages, setArchivedImages] = useState([]);
+  const [savedStories, setSavedStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Only fetch data if there is a logged in user
-    if (!userId) {
-      setIsLoading(false);
-      return;
-    }
-    console.log("userId:", userId);
+    console.log("Profile User ID from params:", profileUserId); // Debug log
+    console.log("Logged in User ID:", loggedInUserId); // Debug log
 
     const fetchProfileData = async () => {
       try {
-        const userData = await get(`/api/user`, { userid: userId });
-        console.log("User data:", userData);
-        if (userData && userData.name) {
-          setUserName(userData.name);
-        }
+        const userData = await get("/api/user", { userid: profileUserId });
+        console.log("Fetched user data:", userData); // Debug log
+
+        const userPosts = await get("/api/stories", { creator_id: profileUserId });
+        console.log("Fetched user posts:", userPosts); // Debug log
+
+        const savedStoriesData =
+          loggedInUserId === profileUserId ? await get("/api/saved-stories") : [];
+
+        setUser(userData);
+        setPosts(userPosts);
+        setSavedStories(savedStoriesData);
       } catch (error) {
         console.error("Error fetching profile data:", error);
       } finally {
@@ -34,13 +39,18 @@ const Profile = () => {
     };
 
     fetchProfileData();
-  }, [userId]);
+  }, [profileUserId, loggedInUserId]);
 
-  if (!userId) {
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
     return (
       <div className="profile-page">
         <Link to={"/"}>Home</Link>
-        <h1>Please log in to view your profile</h1>
+        <h1>User not found</h1>
+        <p>Debug info: Looking for user ID: {profileUserId}</p>
       </div>
     );
   }
@@ -48,49 +58,51 @@ const Profile = () => {
   return (
     <div className="profile-page">
       <Link to={"/"}>Home</Link>
-      <h1>{userName}'s Profile</h1>
-      <Link to="/settings" className="settings-link">
-        Go to Settings
-      </Link>
-
-      {isLoading ? (
-        <p>Loading your profile...</p>
-      ) : (
-        <div>
-          <section className="posts-section">
-            <h2>Your Posts</h2>
-            {
-              /*posts.length > 0 ? (
-              <ul>
-                {posts.map((post) => (
-                  <li key={post.id}>
-                    <h3>{post.title}</h3>
-                    <p>{post.content}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : */ <p>No posts found.</p>
-            }
-          </section>
-
-          <section className="images-section">
-            <h2>Archived Images</h2>
-            {
-              /*archivedImages.length > 0 ? (
-              <div className="image-gallery">
-                {archivedImages.map((image) => (
-                  <img
-                    key={image.id}
-                    src={image.url}
-                    alt={image.description || "Archived image"}
-                    className="archived-image"
-                  />
-                ))}
-              </div>
-            ) : */ <p>No archived images found.</p>
-            }
-          </section>
-        </div>
+      <h1>{user.name}'s Profile</h1>
+      {loggedInUserId === profileUserId && (
+        <Link to="/settings" className="settings-link">
+          Go to Settings
+        </Link>
+      )}
+      <section className="posts-section">
+        <h2>Posts</h2>
+        {posts.length > 0 ? (
+          <div>
+            {posts.map((post) => (
+              <SingleStory
+                key={post._id}
+                _id={post._id}
+                creator_id={post.creator_id}
+                creator_name={post.creator_name}
+                content={post.content}
+                img_url={post.img_url}
+              />
+            ))}
+          </div>
+        ) : (
+          <p>No posts found.</p>
+        )}
+      </section>
+      {loggedInUserId === profileUserId && (
+        <section className="saved-stories-section">
+          <h2>Saved Stories</h2>
+          {savedStories.length > 0 ? (
+            <div>
+              {savedStories.map((story) => (
+                <SingleStory
+                  key={story._id}
+                  _id={story._id}
+                  creator_id={story.creator_id}
+                  creator_name={story.creator_name}
+                  content={story.content}
+                  img_url={story.img_url}
+                />
+              ))}
+            </div>
+          ) : (
+            <p>No saved stories found.</p>
+          )}
+        </section>
       )}
     </div>
   );
