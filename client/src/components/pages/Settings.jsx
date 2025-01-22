@@ -1,25 +1,40 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import "./Settings.css";
+import { UserContext } from "../App";
+import { get, post } from "../../utilities";
 
 const Settings = () => {
+  const { userId } = useContext(UserContext);
   const [membershipInfo, setMembershipInfo] = useState({});
   const [userDetails, setUserDetails] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching user settings and membership details from an API
+    // Only fetch data if there is a logged in user
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+
     const fetchSettingsData = async () => {
       try {
-        // Replace these URLs with your actual API endpoints
-        const membershipResponse = await fetch("/api/user/membership");
-        const userDetailsResponse = await fetch("/api/user/details");
+        // Add userId to API requests to get specific user's data
+        //const userData = await get(`/api/user`, { userid: userId });
+        //const membershipResponse = await fetch(`/api/user/${userId}/membership`);
+        const userData = await get(`/api/user`, { userid: userId });
 
-        const membershipData = await membershipResponse.json();
-        const userDetailsData = await userDetailsResponse.json();
-
+        //const membershipData = await membershipResponse.json();
+        //const userDetailsData = await userDetailsResponse.json();
+        if (userData && userData.name) {
+          // Update userDetails with userData information
+          setUserDetails({
+            name: userData.name,
+            //email: userData.email,
+            //phone: userData.phone,
+          });
+        }
         setMembershipInfo(membershipData);
-        setUserDetails(userDetailsData);
       } catch (error) {
         console.error("Error fetching settings data:", error);
       } finally {
@@ -28,14 +43,23 @@ const Settings = () => {
     };
 
     fetchSettingsData();
-  }, []);
+  }, [userId]);
+
+  if (!userId) {
+    return (
+      <div className="settings-page">
+        <Link to={"/"}>Home</Link>
+        <h1>Please log in to view your settings</h1>
+      </div>
+    );
+  }
 
   return (
-    <div className="settings-container">
+    <div className="settings-page">
       <div style={{ textAlign: "center", width: "100%" }}>
         <Link to={"/"}>Home</Link>
       </div>
-      <h1>Settings</h1>
+      <h1>{userDetails.name}'s Settings</h1>
       {isLoading ? (
         <p>Loading your settings...</p>
       ) : (
@@ -43,45 +67,45 @@ const Settings = () => {
           <section className="settings-section">
             <h2>Membership Information</h2>
             <p>
-              <strong>Membership Level:</strong> {membershipInfo.level || "Free"}
+              <strong>Membership Level:</strong> {"Free"}
             </p>
             <p>
-              <strong>Expiration Date:</strong> {membershipInfo.expirationDate || "N/A"}
+              <strong>Expiration Date:</strong> {"N/A"}
             </p>
             <p>
-              <strong>Status:</strong> {membershipInfo.status || "Active"}
+              <strong>Status:</strong> {"Active"}
             </p>
           </section>
 
           <section className="settings-section">
-            <h2>User Details</h2>
+            <h2>Details</h2>
             <p>
               <strong>Name:</strong> {userDetails.name || "N/A"}
             </p>
             <p>
-              <strong>Email:</strong> {userDetails.email || "N/A"}
+              <strong>Email:</strong> {"N/A" /*userDetails.email || "N/A"*/}
             </p>
             <p>
-              <strong>Phone:</strong> {userDetails.phone || "N/A"}
+              <strong>Phone:</strong> {"N/A" /*userDetails.phone || "N/A"*/}
             </p>
           </section>
 
           <section className="settings-section">
-            <h2>Actions</h2>
+            <h2>Account Actions</h2>
             <button className="settings-button" onClick={() => console.log("Edit Profile clicked")}>
-              Edit Profile
+              Edit Your Profile
             </button>
             <button
               className="settings-button"
               onClick={() => console.log("Change Password clicked")}
             >
-              Change Password
+              Change Your Password
             </button>
             <button
               className="settings-button"
               onClick={() => console.log("Upgrade Membership clicked")}
             >
-              Upgrade Membership
+              Upgrade Your Membership
             </button>
           </section>
         </div>

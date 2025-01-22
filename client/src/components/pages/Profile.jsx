@@ -1,25 +1,31 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { Link, useParams } from "react-router-dom";
 import "./Profile.css";
+import { UserContext } from "../App";
+import { get, post } from "../../utilities";
 
 const Profile = () => {
+  const { userId } = useContext(UserContext);
   const [posts, setPosts] = useState([]);
   const [archivedImages, setArchivedImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userName, setUserName] = useState(null);
 
   useEffect(() => {
-    // Simulate fetching user's posts and archived images from an API
+    // Only fetch data if there is a logged in user
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+    console.log("userId:", userId);
+
     const fetchProfileData = async () => {
       try {
-        // Replace these URLs with your actual API endpoints
-        const postsResponse = await fetch("/api/user/posts");
-        const imagesResponse = await fetch("/api/user/archived-images");
-
-        const postsData = await postsResponse.json();
-        const imagesData = await imagesResponse.json();
-
-        setPosts(postsData);
-        setArchivedImages(imagesData);
+        const userData = await get(`/api/user`, { userid: userId });
+        console.log("User data:", userData);
+        if (userData && userData.name) {
+          setUserName(userData.name);
+        }
       } catch (error) {
         console.error("Error fetching profile data:", error);
       } finally {
@@ -28,12 +34,21 @@ const Profile = () => {
     };
 
     fetchProfileData();
-  }, []);
+  }, [userId]);
+
+  if (!userId) {
+    return (
+      <div className="profile-page">
+        <Link to={"/"}>Home</Link>
+        <h1>Please log in to view your profile</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
       <Link to={"/"}>Home</Link>
-      <h1>Your Profile</h1>
+      <h1>{userName}'s Profile</h1>
       <Link to="/settings" className="settings-link">
         Go to Settings
       </Link>
@@ -44,7 +59,8 @@ const Profile = () => {
         <div>
           <section className="posts-section">
             <h2>Your Posts</h2>
-            {posts.length > 0 ? (
+            {
+              /*posts.length > 0 ? (
               <ul>
                 {posts.map((post) => (
                   <li key={post.id}>
@@ -53,14 +69,14 @@ const Profile = () => {
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p>No posts found.</p>
-            )}
+            ) : */ <p>No posts found.</p>
+            }
           </section>
 
           <section className="images-section">
             <h2>Archived Images</h2>
-            {archivedImages.length > 0 ? (
+            {
+              /*archivedImages.length > 0 ? (
               <div className="image-gallery">
                 {archivedImages.map((image) => (
                   <img
@@ -71,9 +87,8 @@ const Profile = () => {
                   />
                 ))}
               </div>
-            ) : (
-              <p>No archived images found.</p>
-            )}
+            ) : */ <p>No archived images found.</p>
+            }
           </section>
         </div>
       )}

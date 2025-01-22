@@ -44,6 +44,22 @@ router.post("/initsocket", (req, res) => {
 // |------------------------------|
 
 // anything else falls to this "not found" case
+
+router.get("/user", (req, res) => {
+  User.findById(req.query.userid)
+    .then((user) => {
+      if (user) {
+        res.send({ name: user.name }); // Ensure name is part of the response
+      } else {
+        res.status(404).send({ error: "User not found" });
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send({ error: "Internal server error" });
+    });
+});
+
 router.all("*", (req, res) => {
   console.log(`API route not found: ${req.method} ${req.url}`);
   res.status(404).send({ msg: "API route not found" });
