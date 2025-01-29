@@ -10,27 +10,47 @@ const Profile = () => {
   const { userId: profileUserId } = useParams(); // Extract userId from the URL
   const [posts, setPosts] = useState([]);
   const [savedStories, setSavedStories] = useState([]);
+  const [generatedDesigns, setGeneratedDesigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    console.log("Profile User ID from params:", profileUserId); // Debug log
-    console.log("Logged in User ID:", loggedInUserId); // Debug log
-
     const fetchProfileData = async () => {
       try {
+        console.log("Fetching data for user:", profileUserId); // Debug log
+
         const userData = await get("/api/user", { userid: profileUserId });
-        console.log("Fetched user data:", userData); // Debug log
+        console.log("User data:", userData); // Debug log
 
-        const userPosts = await get("/api/stories", { creator_id: profileUserId });
-        console.log("Fetched user posts:", userPosts); // Debug log
+        // Get regular posts (not generated)
+        const userPosts = await get("/api/user-stories", {
+          creator_id: profileUserId,
+          isGenerated: false,
+        });
+        console.log("Regular posts:", userPosts); // Debug log
 
-        const savedStoriesData =
-          loggedInUserId === profileUserId ? await get("/api/saved-stories") : [];
+        // Get all stories and filter for generated ones
+        const allStories = await get("/api/user-stories", { creator_id: profileUserId });
+        const generatedOnes = allStories.filter((story) => story.isGenerated);
+        console.log("Generated designs:", generatedOnes); // Debug log
 
         setUser(userData);
         setPosts(userPosts);
-        setSavedStories(savedStoriesData);
+        setGeneratedDesigns(generatedOnes);
+
+        if (loggedInUserId === profileUserId) {
+          // Get saved stories
+          const savedStoriesResponse = await get("/api/saved-stories");
+          const savedRegular = savedStoriesResponse.filter((story) => !story.isGenerated);
+          const savedGenerated = savedStoriesResponse.filter((story) => story.isGenerated);
+          console.log("Saved regular:", savedRegular); // Debug log
+          console.log("Saved generated:", savedGenerated); // Debug log
+
+          setSavedStories({
+            regular: savedRegular,
+            generated: savedGenerated,
+          });
+        }
       } catch (error) {
         console.error("Error fetching profile data:", error);
       } finally {
@@ -64,6 +84,25 @@ const Profile = () => {
           Go to Settings
         </Link>
       )}
+      <section className="generated-designs-section">
+        <h2>Saved Generated Designs</h2>
+        {generatedDesigns.length > 0 ? (
+          <div className="designs-grid">
+            {generatedDesigns.map((design) => (
+              <SingleStory
+                key={design._id}
+                _id={design._id}
+                creator_id={design.creator_id}
+                creator_name={design.creator_name}
+                content={design.content}
+                img_url={design.img_url}
+              />
+            ))}
+          </div>
+        ) : (
+          <p>No generated designs yet.</p>
+        )}
+      </section>
       <section className="posts-section">
         <h2>Posts</h2>
         {posts.length > 0 ? (
@@ -84,25 +123,27 @@ const Profile = () => {
         )}
       </section>
       {loggedInUserId === profileUserId && (
-        <section className="saved-stories-section">
-          <h2>Saved Stories</h2>
-          {savedStories.length > 0 ? (
-            <div>
-              {savedStories.map((story) => (
-                <SingleStory
-                  key={story._id}
-                  _id={story._id}
-                  creator_id={story.creator_id}
-                  creator_name={story.creator_name}
-                  content={story.content}
-                  img_url={story.img_url}
-                />
-              ))}
-            </div>
-          ) : (
-            <p>No saved stories found.</p>
-          )}
-        </section>
+        <>
+          <section className="saved-stories-section">
+            <h2>Saved Posts</h2>
+            {savedStories.regular && savedStories.regular.length > 0 ? (
+              <div>
+                {savedStories.regular.map((story) => (
+                  <SingleStory
+                    key={story._id}
+                    _id={story._id}
+                    creator_id={story.creator_id}
+                    creator_name={story.creator_name}
+                    content={story.content}
+                    img_url={story.img_url}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p>No saved posts yet.</p>
+            )}
+          </section>
+        </>
       )}
     </div>
   );

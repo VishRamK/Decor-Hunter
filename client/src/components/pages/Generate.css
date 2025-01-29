@@ -145,6 +145,28 @@
   background-color: #45a049;
 }
 
+.save-button {
+  background-color: #4caf50;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.save-button:hover {
+  background-color: #45a049;
+}
+
+.login-prompt {
+  color: #666;
+  font-style: italic;
+  font-size: 14px;
+  margin: 8px 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .cards-grid {

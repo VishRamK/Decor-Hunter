@@ -12,6 +12,7 @@ const OpenAI = require("openai");
 const multer = require("multer");
 const sharp = require("sharp");
 const fs = require("fs").promises;
+const path = require("path");
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -55,6 +56,13 @@ const openai = new OpenAI({
 router.use(express.json({ limit: "50mb" }));
 router.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, "uploads");
+fs.mkdir(uploadsDir, { recursive: true }).catch(console.error);
+
+// Configure express to serve static files from the uploads directory
+router.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 router.post("/login", auth.login);
 router.post("/logout", auth.logout);
 router.get("/whoami", (req, res) => {
@@ -79,21 +87,71 @@ router.post("/initsocket", (req, res) => {
 
 // Get all stories
 router.get("/stories", (req, res) => {
-  Story.find({}).then((stories) => {
+  Story.find({isGenerated: false}).then((stories) => {
     res.send(stories);
   });
 });
 
+router.get("/user-stories", (req, res) => {
+  const query = {
+    creator_id: req.query.creator_id,
+    isGenerated: false,
+  };
+
+  Story.find(query)
+    .then((stories) => {
+      res.send(stories);
+    })
+    .catch((err) => {
+      console.error("Error fetching stories:", err);
+      res.status(500).send({ error: "Failed to fetch stories" });
+    });
+});
+
 // Create a new story
 router.post("/story", (req, res) => {
-  const newStory = new Story({
-    creator_id: req.user._id,
-    creator_name: req.user.name,
-    content: req.body.content,
-    img_url: req.body.img_url, // This will be populated after image upload
-  });
+  upload(req, res, async function (err) {
+    if (err) {
+      console.error("Upload error:", err);
+      return res.status(400).json({
+        error: "File upload error",
+        details: err.message,
+      });
+    }
 
-  newStory.save().then((story) => res.send(story));
+    try {
+      let img_url = req.body.img_url; // Keep existing img_url if provided
+
+      // If there's an uploaded file, process it
+      if (req.file) {
+        const filename = `${Date.now()}-${req.file.originalname}`;
+        const filepath = path.join(uploadsDir, filename);
+        
+        // Save the file
+        await fs.writeFile(filepath, req.file.buffer);
+        
+        // Set the image URL to point to our static file server
+        img_url = `/api/uploads/${filename}`;
+      }
+
+      const newStory = new Story({
+        creator_id: req.user._id,
+        creator_name: req.user.name,
+        content: req.body.content,
+        img_url: img_url,
+        isGenerated: false,
+      });
+
+      const story = await newStory.save();
+      res.send(story);
+    } catch (error) {
+      console.error("Error saving story:", error);
+      res.status(500).json({
+        error: "Failed to save story",
+        details: error.message,
+      });
+    }
+  });
 });
 
 // Get comments for a story
@@ -116,7 +174,7 @@ router.post("/comment", (req, res) => {
 });
 
 // Save a story
-router.post("/save-story", auth.ensureLoggedIn, (req, res) => {
+router.post("/save-story", (req, res) => {
   User.findById(req.user._id).then((user) => {
     if (!user.savedStories) {
       user.savedStories = [];
@@ -131,7 +189,7 @@ router.post("/save-story", auth.ensureLoggedIn, (req, res) => {
 });
 
 // Unsave a story
-router.post("/unsave-story", auth.ensureLoggedIn, (req, res) => {
+router.post("/unsave-story", (req, res) => {
   User.findById(req.user._id).then((user) => {
     if (user.savedStories) {
       user.savedStories = user.savedStories.filter((id) => id !== req.body.storyId);
@@ -142,25 +200,49 @@ router.post("/unsave-story", auth.ensureLoggedIn, (req, res) => {
   });
 });
 
-// Check if a story is saved
-router.get("/saved-story", auth.ensureLoggedIn, (req, res) => {
-  User.findById(req.user._id).then((user) => {
-    const isSaved = user.savedStories && user.savedStories.includes(req.query.storyId);
-    res.send({ isSaved });
-  });
-});
-
 // Get all saved stories
-router.get("/saved-stories", auth.ensureLoggedIn, (req, res) => {
+router.get("/saved-stories", (req, res) => {
   User.findById(req.user._id).then((user) => {
     if (!user.savedStories || user.savedStories.length === 0) {
       res.send([]);
       return;
     }
-    Story.find({ _id: { $in: user.savedStories } }).then((stories) => {
+    Story.find({ _id: { $in: user.savedStories }, isGenerated: false }).then((stories) => {
       res.send(stories);
     });
   });
+});
+
+// Save a generated design (using the same story model)
+router.post("/save-generated", (req, res) => {
+  const newStory = new Story({
+    creator_id: req.user._id,
+    creator_name: req.user.name,
+    content: req.body.content,
+    img_url: req.body.img_url,
+    isGenerated: true, // Always true for generated designs
+  });
+
+  newStory
+    .save()
+    .then((story) => res.send(story))
+    .catch((err) => {
+      console.error("Error saving generated design:", err);
+      res.status(500).send({ error: "Failed to save generated design" });
+    });
+});
+
+// Get user's generated designs
+router.get("/generated-designs", (req, res) => {
+  Story.find({
+    creator_id: req.query.userId,
+    isGenerated: true,
+  })
+    .then((stories) => res.send(stories))
+    .catch((err) => {
+      console.error("Error fetching generated designs:", err);
+      res.status(500).send({ error: "Failed to fetch generated designs" });
+    });
 });
 
 // anything else falls to this "not found" case

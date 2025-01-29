@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import "./Generate.css";
+import { UserContext } from "../App";
 
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB limit
 
@@ -11,6 +12,7 @@ const Generate = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [generatedCards, setGeneratedCards] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { userId } = useContext(UserContext);
 
   const handleTextChange = (e) => {
     setTextInput(e.target.value);
@@ -158,95 +160,103 @@ const Generate = () => {
     }
   };
 
-  const handleDownload = () => {
-    if (imagePreview) {
-      const link = document.createElement("a");
-      link.href = imagePreview;
-      link.download = "generated-image.png";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  const handleSave = async (card) => {
+    try {
+      const response = await fetch("/api/story", {
+        method: "POST",
+        body: JSON.stringify({
+          content: card.description,
+          img_url: card.image,
+          isGenerated: true,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save design");
+      }
+
+      alert("Design saved successfully!");
+    } catch (error) {
+      console.error("Error saving design:", error);
+      alert("Failed to save design. Please try again.");
     }
   };
 
   return (
-    <div className="generate-container">
-      <Link to={"/"}>Home</Link>
-      <h2>Generate</h2>
-      <form className="generate-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="textInput">Room Description:</label>
-          <input
-            type="text"
-            id="textInput"
-            value={textInput}
-            onChange={handleTextChange}
-            placeholder="Describe your room (e.g., living room, bedroom)"
-            className="generate-input"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="prompt">Style Prompt:</label>
-          <textarea
-            id="prompt"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe the style you want (e.g., modern minimalist, bohemian, industrial)"
-            className="generate-input"
-            rows={4}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="imageInput">Upload Room Image:</label>
-          <input
-            type="file"
-            id="imageInput"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="generate-input"
-          />
-        </div>
-        <button type="submit" className="generate-button" disabled={loading}>
-          {loading ? "Generating..." : "Generate Variations"}
-        </button>
-      </form>
+    <>
+      {userId && (
+        <div className="generate-container">
+          <Link to={"/"}>Home</Link>
+          <h2>Generate</h2>
+          <form className="generate-form" onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="textInput">Room Description:</label>
+              <input
+                type="text"
+                id="textInput"
+                value={textInput}
+                onChange={handleTextChange}
+                placeholder="Describe your room (e.g., living room, bedroom)"
+                className="generate-input"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="prompt">Style Prompt:</label>
+              <textarea
+                id="prompt"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe the style you want (e.g., modern minimalist, bohemian, industrial)"
+                className="generate-input"
+                rows={4}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="imageInput">Upload Room Image:</label>
+              <input
+                type="file"
+                id="imageInput"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="generate-input"
+              />
+            </div>
+            <button type="submit" className="generate-button" disabled={loading}>
+              {loading ? "Generating..." : "Generate Variations"}
+            </button>
+          </form>
 
-      {generatedCards.length > 0 && (
-        <div className="generated-cards">
-          <h3>Generated Designs</h3>
-          <div className="cards-grid">
-            {generatedCards.map((card, index) => (
-              <div key={index} className="design-card">
-                <div className="image-container">
-                  <img
-                    src={card.image}
-                    alt={`Generated design ${index + 1}`}
-                    className="design-image"
-                  />
-                </div>
-                <div className="card-content">
-                  <h4>{card.title}</h4>
-                  <p>{card.description}</p>
-                  <button
-                    onClick={() => {
-                      const link = document.createElement("a");
-                      link.href = card.image;
-                      link.download = `design-${index + 1}.png`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}
-                    className="download-button"
-                  >
-                    Download
-                  </button>
-                </div>
+          {generatedCards.length > 0 && (
+            <div className="generated-cards">
+              <h3>Generated Designs</h3>
+              <div className="cards-grid">
+                {generatedCards.map((card, index) => (
+                  <div key={index} className="design-card">
+                    <div className="image-container">
+                      <img
+                        src={card.image}
+                        alt={`Generated design ${index + 1}`}
+                        className="design-image"
+                      />
+                    </div>
+                    <div className="card-content">
+                      <h4>{card.title}</h4>
+                      <p>{card.description}</p>
+                      <button onClick={() => handleSave(card)} className="save-button">
+                        Save to Profile
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 };
 

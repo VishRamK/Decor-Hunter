@@ -22,8 +22,6 @@ const Card = (props) => {
     });
   }, []);
 
-  // this gets called when the user pushes "Submit", so their
-  // post gets added to the screen right away
   const addNewComment = (commentObj) => {
     setComments(comments.concat([commentObj]));
   };

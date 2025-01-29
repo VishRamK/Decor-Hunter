@@ -5,6 +5,7 @@ const StorySchema = new mongoose.Schema({
   creator_id: String,
   creator_name: String,
   img_url: String,
+  isGenerated: Boolean,
   content: String,
 });
 
