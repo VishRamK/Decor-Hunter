@@ -31,9 +31,6 @@ const path = require("path"); // provide utilities for working with file and dir
 const api = require("./api");
 const auth = require("./auth");
 
-// socket stuff
-const socketManager = require("./server-socket");
-
 // Server configuration below
 // TODO change connection URL after setting up your team database
 const mongoConnectionURL = process.env.MONGO_SRV;
@@ -78,10 +75,36 @@ app.use("/api", api);
 
 // load the compiled react files, which will serve /index.html and /bundle.js
 const reactPath = path.resolve(__dirname, "..", "client", "dist");
-app.use(express.static(reactPath));
 
-// Add this before your other app.use statements
+// Serve static files
+app.use(express.static(reactPath));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Authentication middleware
+app.use((req, res, next) => {
+  // Skip auth check for login-related endpoints and static files
+  if (
+    req.path === "/auth/login" ||
+    req.path === "/api/login" ||
+    req.path === "/api/logout" ||
+    req.path.startsWith("/static/") ||
+    req.path === "/bundle.js" ||
+    req.path === "/favicon.ico"
+  ) {
+    return next();
+  }
+
+  // Check if user is logged in
+  if (!req.session || !req.session.user) {
+    // For API requests, return 401 status
+    if (req.path.startsWith("/api/")) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+    // For other requests, redirect to login page
+    return res.redirect("/auth/login");
+  }
+  next();
+});
 
 // for all other routes, render index.html and let react router handle it
 app.get("*", (req, res) => {
@@ -114,7 +137,6 @@ app.use((err, req, res, next) => {
 // hardcode port to 3000 for now
 const port = 3000;
 const server = http.Server(app);
-socketManager.init(server);
 
 server.listen(port, () => {
   console.log(`Server running on port: ${port}`);

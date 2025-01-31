@@ -9,7 +9,8 @@ import { post, get } from "../../utilities";
  * @param {string} _id of the story
  * @param {string} creator_name
  * @param {string} content of the story
- * @param {string} img_url optional url of the story image
+ * @param {string} img_url url of the generated image (only shown if isGenerated is true)
+ * @param {boolean} isGenerated whether the story contains a generated image
  */
 const SingleStory = (props) => {
   const [isSaved, setIsSaved] = useState(false);
@@ -33,7 +34,9 @@ const SingleStory = (props) => {
         {props.creator_name}
       </Link>
       <p className="Card-storyContent">{props.content}</p>
-      {props.img_url && <img src={props.img_url} alt="Story" className="Card-storyImage" />}
+      {props.isGenerated && props.img_url && (
+        <img src={props.img_url} alt="Generated Story" className="Card-storyImage" />
+      )}
       <button onClick={handleSave} className="Card-saveButton">
         {isSaved ? "Unsave" : "Save"}
       </button>

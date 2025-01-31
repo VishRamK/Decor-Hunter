@@ -4,9 +4,9 @@ const mongoose = require("mongoose");
 const StorySchema = new mongoose.Schema({
   creator_id: String,
   creator_name: String,
-  img_url: String,
-  isGenerated: Boolean,
   content: String,
+  img_url: { type: String, required: false }, // Only used for generated images
+  isGenerated: { type: Boolean, default: false },
 });
 
 // compile model from schema

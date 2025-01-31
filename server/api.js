@@ -9,29 +9,8 @@
 
 const express = require("express");
 const OpenAI = require("openai");
-const multer = require("multer");
-const sharp = require("sharp");
 const fs = require("fs").promises;
 const path = require("path");
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 50 * 1024 * 1024, // Increased to 50MB to handle initial upload
-  },
-  fileFilter: (req, file, cb) => {
-    console.log("Received file:", {
-      name: file.originalname,
-      type: file.mimetype,
-      size: file.size / 1024 + "KB",
-    });
-
-    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
-      cb(null, true);
-    } else {
-      cb(new Error("Only JPEG and PNG files are allowed"));
-    }
-  },
-}).single("image");
 
 // import models so we can interact with the database
 const User = require("./models/user");
@@ -43,9 +22,6 @@ const auth = require("./auth");
 
 // api endpoints: all these paths will be prefixed with "/api/"
 const router = express.Router();
-
-//initialize socket
-const socketManager = require("./server-socket");
 
 // Configure OpenAI
 const openai = new OpenAI({
@@ -74,12 +50,6 @@ router.get("/whoami", (req, res) => {
   res.send(req.user);
 });
 
-router.post("/initsocket", (req, res) => {
-  // do nothing if user not logged in
-  if (req.user)
-    socketManager.addUser(req.user, socketManager.getSocketFromSocketID(req.body.socketid));
-  res.send({});
-});
 
 // |------------------------------|
 // | write your API methods below!|
@@ -110,48 +80,14 @@ router.get("/user-stories", (req, res) => {
 
 // Create a new story
 router.post("/story", (req, res) => {
-  upload(req, res, async function (err) {
-    if (err) {
-      console.error("Upload error:", err);
-      return res.status(400).json({
-        error: "File upload error",
-        details: err.message,
-      });
-    }
-
-    try {
-      let img_url = req.body.img_url; // Keep existing img_url if provided
-
-      // If there's an uploaded file, process it
-      if (req.file) {
-        const filename = `${Date.now()}-${req.file.originalname}`;
-        const filepath = path.join(uploadsDir, filename);
-        
-        // Save the file
-        await fs.writeFile(filepath, req.file.buffer);
-        
-        // Set the image URL to point to our static file server
-        img_url = `/api/uploads/${filename}`;
-      }
-
-      const newStory = new Story({
-        creator_id: req.user._id,
-        creator_name: req.user.name,
-        content: req.body.content,
-        img_url: img_url,
-        isGenerated: false,
-      });
-
-      const story = await newStory.save();
-      res.send(story);
-    } catch (error) {
-      console.error("Error saving story:", error);
-      res.status(500).json({
-        error: "Failed to save story",
-        details: error.message,
-      });
-    }
+  const newStory = new Story({
+    creator_id: req.user._id,
+    creator_name: req.user.name,
+    content: req.body.content,
+    isGenerated: false,
   });
+
+  newStory.save().then((story) => res.send(story));
 });
 
 // Get comments for a story
@@ -171,6 +107,17 @@ router.post("/comment", (req, res) => {
   });
 
   newComment.save().then((comment) => res.send(comment));
+});
+
+// Find out if a story is saved
+router.get("/saved-story", (req, res) => {
+  User.findById(req.user._id).then((user) => {
+    if (!user.savedStories) {
+      res.send(false);
+    } else {
+      res.send(user.savedStories.includes(req.query.storyId));
+    }
+  });
 });
 
 // Save a story
@@ -282,13 +229,10 @@ router.post("/generate-variations", (req, res) => {
       // Construct a detailed prompt combining room description and style
       const detailedPrompt = `Generate an interior design image of a ${textInput} in ${prompt} style. The room should maintain the basic layout and architectural features but transform the design elements according to the specified style.`;
 
-      console.log("Using prompt:", detailedPrompt);
-
       // Make 5 separate requests to OpenAI's DALL-E
       const variations = [];
       for (let i = 0; i < 5; i++) {
         try {
-          console.log(`Starting DALL-E request ${i + 1}`);
           const response = await openai.images.generate({
             model: "dall-e-3", // Using DALL-E 3 for better quality
             prompt: detailedPrompt,
@@ -308,9 +252,7 @@ router.post("/generate-variations", (req, res) => {
             title: `Design ${i + 1}`,
             description: `${textInput} styled with ${prompt}`,
           });
-          console.log(`Successfully generated design ${i + 1}`);
 
-          // Add a small delay between requests to avoid rate limits
           await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (generationError) {
           console.error(`OpenAI API error in generation ${i + 1}:`, {
@@ -340,7 +282,6 @@ router.post("/generate-variations", (req, res) => {
 });
 
 router.all("*", (req, res) => {
-  console.log(`API route not found: ${req.method} ${req.url}`);
   res.status(404).send({ msg: "API route not found" });
 });
 

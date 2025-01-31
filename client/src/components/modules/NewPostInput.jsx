@@ -8,28 +8,22 @@ import { post } from "../../utilities";
  *
  * Proptypes
  * @param {string} defaultText is the placeholder text
- * @param {string} storyId optional prop, used for comments
+ * @param {string} storyId optional ID of the story we're replying to
  * @param {({storyId, value}) => void} onSubmit: (function) triggered when this post is submitted, takes {storyId, value} as parameters
  */
 const NewPostInput = (props) => {
   const [value, setValue] = useState("");
-  const [image, setImage] = useState(null);
 
   // called whenever the user types in the new post input box
   const handleChange = (event) => {
     setValue(event.target.value);
   };
 
-  const handleImageChange = (event) => {
-    setImage(event.target.files[0]);
-  };
-
   // called when the user hits "Submit" for a new post
   const handleSubmit = (event) => {
     event.preventDefault();
-    props.onSubmit && props.onSubmit(value, image);
+    props.onSubmit && props.onSubmit(value);
     setValue("");
-    setImage(null);
   };
 
   return (
@@ -41,14 +35,6 @@ const NewPostInput = (props) => {
         onChange={handleChange}
         className="NewPostInput-input"
       />
-      {props.acceptsImages && (
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          className="NewPostInput-image-input"
-        />
-      )}
       <button
         type="submit"
         className="NewPostInput-button u-pointer"
@@ -81,28 +67,22 @@ const NewComment = (props) => {
 };
 
 /**
- * New Story is a New Post component for comments
+ * New Story is a New Post component for creating stories
  *
  * Proptypes
- * @param {string} defaultText is the placeholder text
+ * @param {({storyId, value}) => void} onSubmit: (function) triggered when this post is submitted, takes {storyId, value} as parameters
  */
 const NewStory = (props) => {
-  const addStory = async (value, image) => {
-    const body = new FormData();
-    body.append("content", value);
-    if (image) {
-      body.append("image", image);
-    }
-
+  const addStory = async (value) => {
     try {
-      const story = await post("/api/story", body);
+      const story = await post("/api/story", { content: value });
       props.addNewStory(story);
     } catch (err) {
       console.log(err);
     }
   };
 
-  return <NewPostInput defaultText="New Story" onSubmit={addStory} acceptsImages={true} />;
+  return <NewPostInput defaultText="New Story" onSubmit={addStory} />;
 };
 
 export { NewComment, NewStory };

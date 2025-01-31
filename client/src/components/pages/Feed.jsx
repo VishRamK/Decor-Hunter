@@ -37,6 +37,7 @@ const Feed = () => {
         creator_id={storyObj.creator_id}
         content={storyObj.content}
         img_url={storyObj.img_url}
+        isGenerated={storyObj.isGenerated}
       />
     ));
   } else {

@@ -17,22 +17,18 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        console.log("Fetching data for user:", profileUserId); // Debug log
 
         const userData = await get("/api/user", { userid: profileUserId });
-        console.log("User data:", userData); // Debug log
 
         // Get regular posts (not generated)
         const userPosts = await get("/api/user-stories", {
           creator_id: profileUserId,
           isGenerated: false,
         });
-        console.log("Regular posts:", userPosts); // Debug log
 
         // Get all stories and filter for generated ones
         const allStories = await get("/api/user-stories", { creator_id: profileUserId });
         const generatedOnes = allStories.filter((story) => story.isGenerated);
-        console.log("Generated designs:", generatedOnes); // Debug log
 
         setUser(userData);
         setPosts(userPosts);
@@ -43,8 +39,6 @@ const Profile = () => {
           const savedStoriesResponse = await get("/api/saved-stories");
           const savedRegular = savedStoriesResponse.filter((story) => !story.isGenerated);
           const savedGenerated = savedStoriesResponse.filter((story) => story.isGenerated);
-          console.log("Saved regular:", savedRegular); // Debug log
-          console.log("Saved generated:", savedGenerated); // Debug log
 
           setSavedStories({
             regular: savedRegular,

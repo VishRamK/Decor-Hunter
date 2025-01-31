@@ -12,6 +12,8 @@ import "./Card.css";
  * @param {string} _id of the story
  * @param {string} creator_name
  * @param {string} content of the story
+ * @param {string} img_url of the generated image
+ * @param {boolean} isGenerated whether the story contains a generated image
  */
 const Card = (props) => {
   const [comments, setComments] = useState([]);
@@ -34,6 +36,7 @@ const Card = (props) => {
         creator_name={props.creator_name}
         content={props.content}
         img_url={props.img_url}
+        isGenerated={props.isGenerated}
       />
       <CommentsBlock story={props} comments={comments} addNewComment={addNewComment} />
     </div>
